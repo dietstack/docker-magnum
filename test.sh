@@ -67,7 +67,7 @@ docker run -d --net=host \
 
 echo "Wait till keystone is running ."
 
-wait_for_port 5000 30
+wait_for_port 5000 360
 ret=$?
 if [ $ret -ne 0 ]; then
     echo "Error: Port 5000 (Keystone) not bounded!"
@@ -90,7 +90,7 @@ docker run -d --net=host \
 
 ##### TESTS #####
 
-wait_for_port 9511 30
+wait_for_port 9511 360
 ret=$?
 if [ $ret -ne 0 ]; then
     echo "Error: Port 9511 (Magnum) not bounded!"
