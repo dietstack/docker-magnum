@@ -1,0 +1,12 @@
+--- magnum/common/keystone.py.old   2018-02-28 20:59:07.416059580 +0000
++++ magnum/common/keystone.py   2018-02-28 20:59:37.920532377 +0000
+@@ -117,8 +117,8 @@
+                               username=conf.admin_user,
+                               password=conf.admin_password,
+                               project_name=conf.admin_tenant_name,
+-                              project_domain_id='default',
+-                              user_domain_id='default')
++                              project_domain_name='default',
++                              user_domain_name='default')
+         return auth
+

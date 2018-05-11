@@ -6,7 +6,7 @@ COPY patches/* /patches/
 
 RUN echo 'APT::Install-Recommends "false";' >> /etc/apt/apt.conf && \
     echo 'APT::Get::Install-Suggests "false";' >> /etc/apt/apt.conf && \
-    apt update; apt install -y ca-certificates wget python libpython2.7 netbase; \
+    apt update; apt install -y ca-certificates vim wget python libpython2.7 netbase; \
     update-ca-certificates; \
     wget --no-check-certificate https://bootstrap.pypa.io/get-pip.py; \
     python get-pip.py; \
@@ -28,7 +28,7 @@ RUN apt update; apt install -y $BUILD_PACKAGES && \
     if [ -z $REPO ]; then \
       echo "Sources fetching from releases $RELEASE_URL"; \
       wget $RELEASE_URL && tar xvfz $SVC_VERSION.tar.gz -C / && mv $(ls -1d $SVC_NAME*) $SVC_NAME && \
-      /patches/dbsync_error.sh && \
+      /patches/patch.sh && \
       cd /$SVC_NAME && pip install -r requirements.txt -c /app/upper-constraints.txt && PBR_VERSION=$SVC_VERSION python setup.py install; \
    else \
       if [ -n $COMMIT ]; then \
@@ -37,51 +37,35 @@ RUN apt update; apt install -y $BUILD_PACKAGES && \
       else \
         git clone $REPO --single-branch --depth=1 --branch $BRANCH; \
       fi; \
+      /patches/patch.sh && \
       cd /$SVC_NAME; pip install -r requirements.txt -c /app/upper-constraints.txt && python setup.py install && \
-      if false; then rm -rf /$SVC_NAME/.git; fi; \
+      rm -rf /$SVC_NAME/.git; \
     fi; \
-    pip install supervisor uwsgi PyMySQL python-memcached
-#  && \
-#    apt remove -y --auto-remove $BUILD_PACKAGES &&  \
-#    apt-get clean && apt autoremove && \
-#    rm -rf /var/lib/apt/lists/* && rm -rf /root/.cache
+    pip install supervisor uwsgi PyMySQL python-memcached && \
+    apt remove -y --auto-remove $BUILD_PACKAGES &&  \
+    apt-get clean && apt autoremove && \
+    rm -rf /var/lib/apt/lists/* && rm -rf /root/.cache
 
 # prepare directories for supervisor
 RUN mkdir -p /etc/supervisord /var/log/supervisord
 
-# prepare necessary stuff
-#RUN rm /etc/nginx/sites-enabled/default; \
-#    mkdir -p /var/log/nginx/keystone && \
-#    useradd -M -s /sbin/nologin keystone && \
-#    usermod -G www-data keystone && \
-#    mkdir -p /run/uwsgi/ && chown keystone:keystone /run/uwsgi && chmod 775 /run/uwsgi
-
-# copy keystone configs
-#COPY configs/$SVC_NAME/ /etc/$SVC_NAME/
+# copy magnum configs
+COPY configs/$SVC_NAME/ /etc/$SVC_NAME/
 
 # copy supervisor config
-#COPY configs/supervisord/supervisord.conf /etc
-
-# copy uwsgi ini files
-#RUN mkdir -p /etc/uwsgi
-#COPY configs/uwsgi/keystone-admin.ini /etc/uwsgi/keystone-admin.ini
-#COPY configs/uwsgi/keystone-main.ini /etc/uwsgi/keystone-main.ini
-
-# prepare nginx configs
-#RUN sed -i '1idaemon off;' /etc/nginx/nginx.conf
-#COPY configs/nginx/keystone.conf /etc/nginx/sites-enabled/keystone.conf
+COPY configs/supervisord/supervisord.conf /etc
 
 # external volume
-#VOLUME /$SVC_NAME-override
+VOLUME /$SVC_NAME-override
 
 # copy startup scripts
-#COPY scripts /app
+COPY scripts /app
 
 # Define workdir
 WORKDIR /app
 RUN chmod +x /app/*
 
-#ENTRYPOINT ["/app/entrypoint.sh"]
+ENTRYPOINT ["/app/entrypoint.sh"]
 
 # Define default command.
-#CMD ["/usr/local/bin/supervisord", "-c", "/etc/supervisord.conf"]
+CMD ["/usr/local/bin/supervisord", "-c", "/etc/supervisord.conf"]
